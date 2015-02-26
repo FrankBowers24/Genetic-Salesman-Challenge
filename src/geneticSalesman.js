@@ -19,46 +19,61 @@
  * @param  {[Number]} availableResources   [The number of generations the code will go through]
  * @return {[Array]}                       [The optimal route based on many generations of swapping routes]
  */
-var geneticSalesman = function(genes, assessFitness, initiateBloodline, mutate, availableResources){
+var geneticSalesman = function (genes, assessFitness, initiateBloodline, mutate, availableResources) {
   var options = {
-    numberOfBloodlines: 10,   // Used to repeat the process of 100 generation mutation multiple times
-                              // This will be utilized by the final step explained below
+    numberOfBloodlines: 10, // Used to repeat the process of 100 generation mutation multiple times
+    // This will be utilized by the final step explained below
     offspringPerSurvivor: 50, // # of new routes spawned each gen off the previous best route
   };
 
-  
 
+  var currentGen = [];
+  var bestRoute;
+  var i;
+  var j;
+  var len;
+  var distance;
   /* Populate current generation creating as many new routes
      via createRoutes as specified by offspringPerSurvivor
      into currentGen */
+  for (i = 0; i < options.offspringPerSurvivor; i++) {
+    currentGen.push(initiateBloodline(genes));
 
+  }
 
+  // Iterate through as many generations as availableResources
+  for (i = 0; i < availableResources; i++) {
 
-  // Iterated through as many generations as availableResources
-  
+    /* Calculate the total distance covered of every route
+    and store it along with that route */
+    for (j = 0, len = currentGen.length; j < len; j++) {
+      distance = assessFitness(currentGen[j]);
+      currentGen[j].distance = distance;
+    }
 
+    /* Either sort the current generation by distance
+    or find the route with the lowest distance covered
+    and store it. */
+    currentGen.sort(function (a, b) {
+      return a.distance - b.distance;
 
-      /* Calculate the total distance covered of every route
-      and store it along with that route */
+    });
 
+    bestRoute = currentGen[0];
 
+    /* Spawn a new generation based off of the best route of the 
+    current generation by making mutated/altered copies of
+    the best route. Make sure that the best route is also
+    stored in the new generation! */
+    currentGen = [bestRoute];
+    for (j = 1; j < options.offspringPerSurvivor; j++) {
+      currentGen.push(mutate(bestRoute));
+    }
 
-      /* Either sort the current generation by distance
-      or find the route with the lowest distance covered
-      and store it. */
+    /* Repeat the process for each generation! Make your current
+    generation equal to the newly spawned generation and start over! */
+  }
 
-
-
-      /* Spawn a new generation based off of the best route of the 
-      current generation by making mutated/altered copies of
-      the best route. Make sure that the best route is also
-      stored in the new generation! */
-
-
-
-      /* Repeat the process for each generation! Make your current
-      generation equal to the newly spawned generation and start over! */  
-  
   return bestRoute;
 
 
@@ -83,9 +98,9 @@ var geneticSalesman = function(genes, assessFitness, initiateBloodline, mutate, 
  * @param  {[Array]} cities [Array containing objects representing US cities]
  * @return {[Array]}        [Cities array with cities at random indices]
  */
-var createRoute = function(cities){
+var createRoute = function (cities) {
   var route = cities.slice();
-  for(var i = 0; i < route.length; i++){
+  for (var i = 0; i < route.length; i++) {
     var randomIndex = Math.floor(Math.random() * i);
     route[i] = route[randomIndex];
     route[randomIndex] = cities[i];
@@ -99,36 +114,45 @@ var createRoute = function(cities){
  * @param  {[Array]} route     [Represents the current itinerary of a salesman]
  * @return {[Array]} routeCopy [New itinerary with the order of two cities swapped]
  */
-var alterRoute = function(route){
+var alterRoute = function (route) {
 
-  // Make a copy of the route
-  
-  
-  // Create two random indices using the length of the route array
+    // Make a copy of the route
+    var routeCopy = route.slice();
+
+    // Create two random indices using the length of the route array
+    var index1 = 0;
+    var index2 = 0;
+    while (index1 === index2) {
+      index1 = Math.floor(Math.random() * route.length);
+      index2 = Math.floor(Math.random() * route.length);
+    }
 
 
-  // Swap the objects at those two positions in the route
+    // Swap the objects at those two positions in the route
+    routeCopy[index1] = route[index2];
+    routeCopy[index2] = route[index1];
 
 
-  // Return the newly mutated route copy
-  
-  
-}
-/**
- * Calculates the distance between a city and the next one
- * on the route, then calculates the total distances that would
- * be traveled.
- * @param  {[Array]} route  [A potential route the salesman could take]
- * @return {[Number]}       [The total distance needed to travel that route]
- */
-var calculateDistance = function(route){
-  var distances = route.map(function(city, index, route){
+    // Return the newly mutated route copy
+    return routeCopy;
+
+
+  }
+  /**
+   * Calculates the distance between a city and the next one
+   * on the route, then calculates the total distances that would
+   * be traveled.
+   * @param  {[Array]} route  [A potential route the salesman could take]
+   * @return {[Number]}       [The total distance needed to travel that route]
+   */
+var calculateDistance = function (route) {
+  var distances = route.map(function (city, index, route) {
     var nextCity = route[index + 1] || route[0];
     var distance = distanceCalculator(city, nextCity);
     return distance;
   });
 
-  return distances.reduce(function(distance1, distance2){
+  return distances.reduce(function (distance1, distance2) {
     return distance1 + distance2;
   });
 }
